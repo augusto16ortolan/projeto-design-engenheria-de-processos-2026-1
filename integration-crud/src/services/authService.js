@@ -1,6 +1,7 @@
+import api from "./api";
+
 let currentUser = null;
 
-const ADMIN_EMAIL = "admin@email.com";
 const USER_ROLES = {
   ADMIN: "ADMIN",
   COMMON: "COMMON",
@@ -37,19 +38,20 @@ function validateCredentials(email, password) {
 
 export async function signIn(email, password) {
   validateCredentials(email, password);
-  const normalizedEmail = email.trim().toLowerCase();
-  const isAdmin = normalizedEmail === ADMIN_EMAIL;
-
-  const user = {
-    id: isAdmin ? "mock-admin-1" : "mock-user-1",
-    name: isAdmin ? "Administrador" : normalizedEmail.split("@")[0],
-    email: normalizedEmail,
-    role: isAdmin ? USER_ROLES.ADMIN : USER_ROLES.COMMON,
+  const request = {
+    email,
+    password,
   };
+  const response = await api.post("/auth/login", request);
 
-  currentUser = user;
+  if (response.status != 200) {
+    throw new Error("Ocorreu um erro ao fazer o login");
+  }
 
-  return mapUser(user);
+  return {
+    token: response.data.token,
+    user: mapUser(response.data.user),
+  };
 }
 
 export async function signUp(name, email, password) {
@@ -59,16 +61,20 @@ export async function signUp(name, email, password) {
 
   validateCredentials(email, password);
 
-  const user = {
-    id: `mock-user-${Date.now()}`,
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    role: USER_ROLES.COMMON,
+  const response = await api.post("/auth/register", {
+    name,
+    email,
+    password,
+  });
+
+  if (response.status != 201) {
+    throw new Error("Ocorreu um erro ao registrar o usuário");
+  }
+
+  return {
+    token: response.data.token,
+    user: mapUser(response.data.user),
   };
-
-  currentUser = user;
-
-  return mapUser(user);
 }
 
 export async function signOut() {

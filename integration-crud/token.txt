@@ -1,0 +1,5 @@
+const response = await api.post("/ws/products", productToCreate, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
