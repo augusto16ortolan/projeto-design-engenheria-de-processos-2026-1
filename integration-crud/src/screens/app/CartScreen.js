@@ -12,7 +12,7 @@ import { formatCurrency } from "../../services/formatters";
 import * as orderService from "../../services/orderService";
 
 export default function CartScreen({ navigation }) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const {
     items,
     incrementItem,
@@ -23,9 +23,9 @@ export default function CartScreen({ navigation }) {
   } = useCart();
   const { showAlert, showConfirm } = useCustomAlert();
 
-  function handleIncrement(productId) {
+  async function handleIncrement(productId) {
     try {
-      incrementItem(productId);
+      await incrementItem(productId);
     } catch (error) {
       showAlert({
         title: "Estoque insuficiente",
@@ -48,7 +48,7 @@ export default function CartScreen({ navigation }) {
 
   async function handleCheckout() {
     try {
-      await orderService.createOrder(user, items);
+      await orderService.createOrder(user, items, token);
       clearCart();
 
       showAlert({

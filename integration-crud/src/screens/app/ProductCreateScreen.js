@@ -18,7 +18,7 @@ export default function ProductCreateScreen({ navigation }) {
   const [quantity, setQuantity] = useState("");
   const [image, setImage] = useState("");
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   async function handleSubmit() {
     if (!name || !description || !price || !quantity || !image) {
@@ -50,16 +50,16 @@ export default function ProductCreateScreen({ navigation }) {
     }
 
     try {
-      await productService.createProduct(
-        {
+      await productService.createProduct({
+        productData: {
           name,
           description,
           price,
           quantity,
           image,
         },
-        user.id,
-      );
+        token,
+      });
       showAlert({
         title: "Produto cadastrado",
         message: "O produto foi salvo com sucesso.",

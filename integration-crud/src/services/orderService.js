@@ -1,7 +1,5 @@
+import api from "./api";
 import * as productService from "./productService";
-
-let orders = [];
-let lastOrderId = 0;
 
 function mapOrder(order) {
   return {
@@ -11,11 +9,19 @@ function mapOrder(order) {
   };
 }
 
-export async function getOrders() {
-  return orders.map(mapOrder);
+export async function getOrders(token) {
+  const response = await api.get("/orders", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const orders = response.data.map((order) => mapOrder(order));
+
+  return orders;
 }
 
-export async function createOrder(user, cartItems) {
+export async function createOrder(user, cartItems, token) {
   if (!user) {
     throw new Error("Usuário não autenticado.");
   }
@@ -27,7 +33,10 @@ export async function createOrder(user, cartItems) {
   const orderItems = [];
 
   for (const cartItem of cartItems) {
-    const product = await productService.getProductById(cartItem.product.id);
+    const product = await productService.getProductById(
+      cartItem.product.id,
+      token,
+    );
 
     if (!product) {
       throw new Error(`Produto ${cartItem.product.name} não encontrado.`);
@@ -41,29 +50,21 @@ export async function createOrder(user, cartItems) {
 
     orderItems.push({
       productId: product.id,
-      name: product.name,
-      price: Number(product.price),
       quantity: cartItem.quantity,
-      subtotal: Number(product.price) * cartItem.quantity,
-      image: product.image,
     });
   }
 
-  lastOrderId += 1;
-
   const order = {
-    id: String(lastOrderId),
-    customer: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    },
     items: orderItems,
-    total: orderItems.reduce((sum, item) => sum + item.subtotal, 0),
-    createdAt: new Date().toISOString(),
   };
 
-  orders = [order, ...orders];
+  const response = await api.post("/orders", order, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  console.log(response.data);
 
   return mapOrder(order);
 }

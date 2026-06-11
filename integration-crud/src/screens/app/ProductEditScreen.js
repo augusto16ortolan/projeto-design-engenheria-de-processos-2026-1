@@ -12,6 +12,7 @@ import {
 } from "../../services/formatters";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import * as productService from "../../services/productService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ProductEditScreen({ navigation, route }) {
   const { showAlert } = useCustomAlert();
@@ -23,9 +24,14 @@ export default function ProductEditScreen({ navigation, route }) {
   const [quantity, setQuantity] = useState("");
   const [image, setImage] = useState("");
 
+  const { token } = useAuth();
+
   useEffect(() => {
     async function loadProduct() {
-      const data = await productService.getProductById(route.params.productId);
+      const data = await productService.getProductById(
+        route.params.productId,
+        token,
+      );
       setProduct(data);
       setName(data?.name ?? "");
       setDescription(data?.description ?? "");
@@ -77,13 +83,17 @@ export default function ProductEditScreen({ navigation, route }) {
     }
 
     try {
-      await productService.updateProduct(product.id, {
-        name,
-        description,
-        price,
-        quantity,
-        image,
-      });
+      await productService.updateProduct(
+        product.id,
+        {
+          name,
+          description,
+          price,
+          quantity,
+          image,
+        },
+        token,
+      );
       showAlert({
         title: "Produto atualizado",
         message: "As alterações foram salvas com sucesso.",
@@ -92,6 +102,7 @@ export default function ProductEditScreen({ navigation, route }) {
         onClose: () => navigation.goBack(),
       });
     } catch (error) {
+      console.log(error.message);
       showAlert({
         title: "Erro ao atualizar produto",
         message: error.message,

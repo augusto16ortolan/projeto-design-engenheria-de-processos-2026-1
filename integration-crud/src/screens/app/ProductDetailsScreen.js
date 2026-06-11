@@ -14,7 +14,7 @@ import { formatCurrency } from "../../services/formatters";
 import * as productService from "../../services/productService";
 
 export default function ProductDetailsScreen({ navigation, route }) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { addToCart } = useCart();
   const { showAlert } = useCustomAlert();
   const [product, setProduct] = useState(null);
@@ -24,7 +24,10 @@ export default function ProductDetailsScreen({ navigation, route }) {
   async function loadProduct() {
     try {
       setLoading(true);
-      const data = await productService.getProductById(route.params.productId);
+      const data = await productService.getProductById(
+        route.params.productId,
+        token,
+      );
       setProduct(data);
     } catch (error) {
       showAlert({

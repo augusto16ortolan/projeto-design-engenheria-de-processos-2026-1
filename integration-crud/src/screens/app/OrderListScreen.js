@@ -20,13 +20,13 @@ function formatDate(value) {
 }
 
 export default function OrderListScreen() {
-  const { logout, user } = useAuth();
+  const { logout, user, token } = useAuth();
   const { clearCart } = useCart();
   const [orders, setOrders] = useState([]);
   const isAdmin = user?.role === "ADMIN";
 
   async function loadOrders() {
-    const data = await orderService.getOrders();
+    const data = await orderService.getOrders(token);
     const visibleOrders = isAdmin
       ? data
       : data.filter((order) => order.customer.id === user?.id);
@@ -74,7 +74,9 @@ export default function OrderListScreen() {
 
         <View style={styles.totalRow}>
           <AppText variant="label">Total</AppText>
-          <AppText style={styles.totalText}>{formatCurrency(item.total)}</AppText>
+          <AppText style={styles.totalText}>
+            {formatCurrency(item.total)}
+          </AppText>
         </View>
       </View>
     );

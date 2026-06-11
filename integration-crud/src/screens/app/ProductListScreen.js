@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -19,8 +19,8 @@ import { formatCurrency } from "../../services/formatters";
 import * as productService from "../../services/productService";
 
 export default function ProductListScreen({ navigation }) {
-  const { logout, user } = useAuth();
-  const { addToCart, clearCart, totalItems } = useCart();
+  const { logout, user, token } = useAuth();
+  const { addToCart, totalItems } = useCart();
   const { showAlert, showConfirm } = useCustomAlert();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -29,7 +29,7 @@ export default function ProductListScreen({ navigation }) {
   async function loadProducts() {
     try {
       setLoading(true);
-      const data = await productService.getProducts();
+      const data = await productService.getProducts(token);
       setProducts(data);
     } catch (error) {
       showAlert({
@@ -72,7 +72,6 @@ export default function ProductListScreen({ navigation }) {
 
   async function handleLogout() {
     try {
-      clearCart();
       await logout();
     } catch (error) {
       showAlert({
@@ -83,9 +82,9 @@ export default function ProductListScreen({ navigation }) {
     }
   }
 
-  function handleAddToCart(product) {
+  async function handleAddToCart(product) {
     try {
-      addToCart(product);
+      await addToCart(product);
       showAlert({
         title: "Produto adicionado",
         message: `${product.name} foi adicionado ao carrinho.`,
@@ -179,7 +178,11 @@ export default function ProductListScreen({ navigation }) {
                   Number(item.quantity) <= 0 && styles.disabledIconButton,
                 ]}
               >
-                <MaterialIcons name="add-shopping-cart" size={20} color="#2d7d59" />
+                <MaterialIcons
+                  name="add-shopping-cart"
+                  size={20}
+                  color="#2d7d59"
+                />
               </Pressable>
             )}
           </View>
@@ -247,6 +250,8 @@ export default function ProductListScreen({ navigation }) {
           ListEmptyComponent={renderEmptyList}
           renderItem={renderProduct}
           showsVerticalScrollIndicator={false}
+          onRefresh={() => loadProducts()}
+          refreshing={loading}
         />
       )}
 

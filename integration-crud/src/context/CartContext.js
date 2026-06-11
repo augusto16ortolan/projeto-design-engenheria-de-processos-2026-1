@@ -1,4 +1,6 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext(null);
 
@@ -18,8 +20,46 @@ function mapCartItem(product, quantity) {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
+  const { user } = useAuth();
 
-  function addToCart(product) {
+  useEffect(() => {
+    loadCart();
+  }, [user]);
+
+  useEffect(() => {
+    saveItemsOnCache();
+  }, [items]);
+
+  async function saveItemsOnCache() {
+    if (!user) {
+      return;
+    }
+
+    await AsyncStorage.setItem(
+      `@IntegrationCrud_${user.id}_cartItems`,
+      JSON.stringify(items),
+    );
+  }
+
+  async function loadCart() {
+    if (!user) {
+      return;
+    }
+
+    const response = await AsyncStorage.getItem(
+      `@IntegrationCrud_${user.id}_cartItems`,
+    );
+
+    if (!response) {
+      setItems([]);
+      return;
+    }
+
+    const cachedItems = JSON.parse(response);
+    setItems(cachedItems);
+  }
+
+  async function addToCart(product) {
     if (Number(product.quantity) <= 0) {
       throw new Error("Produto sem estoque disponível.");
     }
@@ -38,13 +78,14 @@ export function CartProvider({ children }) {
             : item,
         ),
       );
+
       return;
     }
 
     setItems((currentItems) => [mapCartItem(product, 1), ...currentItems]);
   }
 
-  function incrementItem(productId) {
+  async function incrementItem(productId) {
     const existingItem = items.find((item) => item.product.id === productId);
 
     if (!existingItem) {
@@ -64,7 +105,7 @@ export function CartProvider({ children }) {
     );
   }
 
-  function decrementItem(productId) {
+  async function decrementItem(productId) {
     setItems((currentItems) =>
       currentItems
         .map((item) =>
@@ -76,7 +117,7 @@ export function CartProvider({ children }) {
     );
   }
 
-  function removeItem(productId) {
+  async function removeItem(productId) {
     setItems((currentItems) =>
       currentItems.filter((item) => item.product.id !== productId),
     );
