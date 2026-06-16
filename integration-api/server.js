@@ -431,7 +431,7 @@ async function initDatabase() {
     create table if not exists order_items (
       id uuid primary key default gen_random_uuid(),
       order_id uuid not null references orders(id) on delete cascade,
-      product_id uuid not null references products(id),
+      product_id uuid references products(id) on delete set null,
       name text not null,
       price numeric(12, 2) not null check (price >= 0),
       quantity integer not null check (quantity > 0),
@@ -446,6 +446,8 @@ async function initDatabase() {
     );
   `);
 
+  await ensureOrderItemsProductDeleteRule();
+
   await pool.query(
     `
       insert into users (name, email, password, role)
@@ -454,6 +456,18 @@ async function initDatabase() {
     `,
     ["Administrador", "admin@email.com", "123456", USER_ROLES.ADMIN],
   );
+}
+
+async function ensureOrderItemsProductDeleteRule() {
+  await pool.query("alter table order_items alter column product_id drop not null");
+  await pool.query("alter table order_items drop constraint if exists order_items_product_id_fkey");
+  await pool.query(`
+    alter table order_items
+    add constraint order_items_product_id_fkey
+    foreign key (product_id)
+    references products(id)
+    on delete set null
+  `);
 }
 
 async function authenticate(request, response, next) {
@@ -664,7 +678,7 @@ function mapOrder(order) {
     id: String(order.id),
     customer: mapCustomer(order.customer),
     items: order.items.map((item) => ({
-      productId: String(item.productId),
+      productId: item.productId ? String(item.productId) : null,
       name: item.name,
       price: Number(item.price),
       quantity: Number(item.quantity),
