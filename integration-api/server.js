@@ -793,7 +793,7 @@ function getOpenApiSpec() {
           description: { type: "string", example: "Notebook para demonstração." },
           price: { type: "number", example: 3500 },
           quantity: { type: "integer", example: 4 },
-          image: { type: "string", example: "https://exemplo.com/produto.jpg" },
+          image: { type: "string", nullable: true, example: "https://exemplo.com/produto.jpg" },
         },
       },
       Customer: {
@@ -820,12 +820,12 @@ function getOpenApiSpec() {
       OrderItem: {
         type: "object",
         properties: {
-          productId: { type: "string", format: "uuid", example: "7fc3e316-4f21-40dd-b89d-4cdbbaf9b7de" },
+          productId: { type: "string", format: "uuid", nullable: true, example: "7fc3e316-4f21-40dd-b89d-4cdbbaf9b7de" },
           name: { type: "string", example: "Notebook Dell" },
           price: { type: "number", example: 3500 },
           quantity: { type: "integer", example: 2 },
           subtotal: { type: "number", example: 7000 },
-          image: { type: "string", example: "https://exemplo.com/produto.jpg" },
+          image: { type: "string", nullable: true, example: "https://exemplo.com/produto.jpg" },
         },
       },
       Error: {
@@ -1001,13 +1001,13 @@ function getOpenApiSpec() {
         "application/json": {
           schema: {
             type: "object",
-            required: ["name", "description", "price", "quantity", "image"],
+            required: ["name", "description", "price", "quantity"],
             properties: {
               name: { type: "string", example: "Notebook Dell" },
               description: { type: "string", example: "Notebook para demonstração." },
               price: { type: "number", example: 3500 },
               quantity: { type: "integer", example: 4 },
-              image: { type: "string", example: "https://exemplo.com/produto.jpg" },
+              image: { type: "string", nullable: true, example: "https://exemplo.com/produto.jpg" },
             },
           },
         },
