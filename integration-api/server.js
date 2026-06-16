@@ -149,7 +149,7 @@ app.post(
         request.body.description.trim(),
         Number(request.body.price),
         Number(request.body.quantity),
-        request.body.image.trim(),
+        normalizeOptionalText(request.body.image),
       ],
     );
 
@@ -184,7 +184,7 @@ app.put(
         request.body.description.trim(),
         Number(request.body.price),
         Number(request.body.quantity),
-        request.body.image.trim(),
+        normalizeOptionalText(request.body.image),
         request.params.id,
       ],
     );
@@ -417,7 +417,7 @@ async function initDatabase() {
       description text not null,
       price numeric(12, 2) not null check (price >= 0),
       quantity integer not null check (quantity >= 0),
-      image text not null,
+      image text,
       created_at timestamptz not null default now()
     );
 
@@ -436,7 +436,7 @@ async function initDatabase() {
       price numeric(12, 2) not null check (price >= 0),
       quantity integer not null check (quantity > 0),
       subtotal numeric(12, 2) not null check (subtotal >= 0),
-      image text not null
+      image text
     );
 
     create table if not exists sessions (
@@ -447,6 +447,7 @@ async function initDatabase() {
   `);
 
   await ensureOrderItemsProductDeleteRule();
+  await ensureOptionalProductImages();
 
   await pool.query(
     `
@@ -468,6 +469,11 @@ async function ensureOrderItemsProductDeleteRule() {
     references products(id)
     on delete set null
   `);
+}
+
+async function ensureOptionalProductImages() {
+  await pool.query("alter table products alter column image drop not null");
+  await pool.query("alter table order_items alter column image drop not null");
 }
 
 async function authenticate(request, response, next) {
@@ -711,12 +717,12 @@ function validateCredentials(email, password) {
 }
 
 function validateProductData(productData) {
-  const { name, description, price, quantity, image } = productData;
+  const { name, description, price, quantity } = productData;
   const parsedPrice = Number(price);
   const parsedQuantity = Number(quantity);
 
-  if (!name?.trim() || !description?.trim() || !image?.trim()) {
-    return "Preencha todos os campos do produto.";
+  if (!name?.trim() || !description?.trim()) {
+    return "Preencha nome e descrição do produto.";
   }
 
   if (
@@ -730,6 +736,11 @@ function validateProductData(productData) {
   }
 
   return null;
+}
+
+function normalizeOptionalText(value) {
+  const text = String(value ?? "").trim();
+  return text || null;
 }
 
 function sendError(response, status, message) {
