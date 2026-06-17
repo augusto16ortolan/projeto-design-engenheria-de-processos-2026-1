@@ -20,13 +20,13 @@ function formatDate(value) {
 }
 
 export default function OrderListScreen() {
-  const { logout, user, token } = useAuth();
+  const { logout, user } = useAuth();
   const { clearCart } = useCart();
   const [orders, setOrders] = useState([]);
   const isAdmin = user?.role === "ADMIN";
 
   async function loadOrders() {
-    const data = await orderService.getOrders(token);
+    const data = await orderService.getOrders();
     const visibleOrders = isAdmin
       ? data
       : data.filter((order) => order.customer.id === user?.id);

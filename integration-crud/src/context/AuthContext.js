@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import * as authService from "../services/authService";
+import { setAuthToken } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -44,6 +45,7 @@ export function AuthProvider({ children }) {
       const response = await authService.signIn(email, password);
       setUser(response.user);
       setToken(response.token);
+      setAuthToken(response.token);
 
       await AsyncStorage.setItem(
         "@IntegrationCrud_userCredentials",
@@ -63,6 +65,7 @@ export function AuthProvider({ children }) {
       const response = await authService.signUp(name, email, password);
       setUser(response.user);
       setToken(response.token);
+      setAuthToken(response.token);
 
       await AsyncStorage.setItem(
         "@IntegrationCrud_userCredentials",
@@ -82,6 +85,8 @@ export function AuthProvider({ children }) {
       await authService.signOut();
       await AsyncStorage.removeItem("@IntegrationCrud_userCredentials");
       setUser(null);
+      setToken(null);
+      setAuthToken(null);
     } finally {
       setLoading(false);
     }

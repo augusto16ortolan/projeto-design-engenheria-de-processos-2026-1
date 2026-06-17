@@ -12,7 +12,7 @@ import { formatCurrency } from "../../services/formatters";
 import * as orderService from "../../services/orderService";
 
 export default function CartScreen({ navigation }) {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const {
     items,
     incrementItem,
@@ -48,7 +48,7 @@ export default function CartScreen({ navigation }) {
 
   async function handleCheckout() {
     try {
-      await orderService.createOrder(user, items, token);
+      await orderService.createOrder(user, items);
       clearCart();
 
       showAlert({

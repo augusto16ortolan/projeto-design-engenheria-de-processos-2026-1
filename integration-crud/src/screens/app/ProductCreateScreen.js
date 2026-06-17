@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet } from "react-native";
 
 import AppButton from "../../components/AppButton";
 import AppInput from "../../components/AppInput";
+import ProductImagePicker from "../../components/ProductImagePicker";
 import QuantityInput from "../../components/QuantityInput";
 import ScreenHeader from "../../components/ScreenHeader";
 import { useCustomAlert } from "../../context/CustomAlertContext";
-import { useAuth } from "../../context/AuthContext";
 import { parseCurrencyInput } from "../../services/formatters";
 import * as productService from "../../services/productService";
 
@@ -17,14 +17,18 @@ export default function ProductCreateScreen({ navigation }) {
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [image, setImage] = useState("");
-
-  const { user, token } = useAuth();
+  const [imageAsset, setImageAsset] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
-    if (!name || !description || !price || !quantity || !image) {
+    if (submitting) {
+      return;
+    }
+
+    if (!name || !description || !price || !quantity) {
       showAlert({
         title: "Campos obrigatórios",
-        message: "Preencha todos os campos do produto.",
+        message: "Preencha nome, descrição, preço e quantidade.",
         type: "warning",
       });
       return;
@@ -50,6 +54,7 @@ export default function ProductCreateScreen({ navigation }) {
     }
 
     try {
+      setSubmitting(true);
       await productService.createProduct({
         productData: {
           name,
@@ -57,8 +62,8 @@ export default function ProductCreateScreen({ navigation }) {
           price,
           quantity,
           image,
+          imageAsset,
         },
-        token,
       });
       showAlert({
         title: "Produto cadastrado",
@@ -73,11 +78,17 @@ export default function ProductCreateScreen({ navigation }) {
         message: error.message,
         type: "danger",
       });
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      keyboardShouldPersistTaps="handled"
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <ScreenHeader title="Novo produto" onBack={() => navigation.goBack()} />
 
       <AppInput
@@ -108,32 +119,38 @@ export default function ProductCreateScreen({ navigation }) {
 
       <QuantityInput onChangeText={setQuantity} value={quantity} />
 
-      <AppInput
-        autoCapitalize="none"
-        icon="image"
-        keyboardType="url"
-        label="Imagem"
-        onChangeText={setImage}
-        placeholder="https://exemplo.com/produto.jpg"
-        value={image}
+      <ProductImagePicker
+        disabled={submitting}
+        imageAsset={imageAsset}
+        imageUrl={image}
+        onRemoveImage={() => {
+          setImage("");
+          setImageAsset(null);
+        }}
+        onSelectImage={setImageAsset}
+        productName={name}
       />
 
       <AppButton
+        disabled={submitting}
         icon="save"
         onPress={handleSubmit}
         style={styles.submitButton}
-        title="Salvar produto"
+        title={submitting ? "Salvando..." : "Salvar produto"}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f5f1ea",
+  },
+  content: {
     padding: 18,
     paddingTop: 58,
-    backgroundColor: "#f5f1ea",
+    paddingBottom: 32,
   },
   submitButton: {
     marginTop: 8,

@@ -19,7 +19,7 @@ import { formatCurrency } from "../../services/formatters";
 import * as productService from "../../services/productService";
 
 export default function ProductListScreen({ navigation }) {
-  const { logout, user, token } = useAuth();
+  const { logout, user } = useAuth();
   const { addToCart, totalItems } = useCart();
   const { showAlert, showConfirm } = useCustomAlert();
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ export default function ProductListScreen({ navigation }) {
   async function loadProducts() {
     try {
       setLoading(true);
-      const data = await productService.getProducts(token);
+      const data = await productService.getProducts();
       setProducts(data);
     } catch (error) {
       showAlert({

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import AppButton from "../../components/AppButton";
 import AppInput from "../../components/AppInput";
 import AppText from "../../components/AppText";
+import ProductImagePicker from "../../components/ProductImagePicker";
 import QuantityInput from "../../components/QuantityInput";
 import ScreenHeader from "../../components/ScreenHeader";
 import {
@@ -12,7 +13,6 @@ import {
 } from "../../services/formatters";
 import { useCustomAlert } from "../../context/CustomAlertContext";
 import * as productService from "../../services/productService";
-import { useAuth } from "../../context/AuthContext";
 
 export default function ProductEditScreen({ navigation, route }) {
   const { showAlert } = useCustomAlert();
@@ -23,21 +23,19 @@ export default function ProductEditScreen({ navigation, route }) {
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
   const [image, setImage] = useState("");
-
-  const { token } = useAuth();
+  const [imageAsset, setImageAsset] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function loadProduct() {
-      const data = await productService.getProductById(
-        route.params.productId,
-        token,
-      );
+      const data = await productService.getProductById(route.params.productId);
       setProduct(data);
       setName(data?.name ?? "");
       setDescription(data?.description ?? "");
       setPrice(data ? formatDecimalInput(data.price) : "");
       setQuantity(data ? String(data.quantity) : "");
       setImage(data?.image ?? "");
+      setImageAsset(null);
       setLoading(false);
     }
 
@@ -45,6 +43,10 @@ export default function ProductEditScreen({ navigation, route }) {
   }, [route.params.productId]);
 
   async function handleSubmit() {
+    if (submitting) {
+      return;
+    }
+
     if (!product) {
       showAlert({
         title: "Produto não encontrado",
@@ -54,10 +56,10 @@ export default function ProductEditScreen({ navigation, route }) {
       return;
     }
 
-    if (!name || !description || !price || !quantity || !image) {
+    if (!name || !description || !price || !quantity) {
       showAlert({
         title: "Campos obrigatórios",
-        message: "Preencha todos os campos do produto.",
+        message: "Preencha nome, descrição, preço e quantidade.",
         type: "warning",
       });
       return;
@@ -83,6 +85,7 @@ export default function ProductEditScreen({ navigation, route }) {
     }
 
     try {
+      setSubmitting(true);
       await productService.updateProduct(
         product.id,
         {
@@ -91,8 +94,8 @@ export default function ProductEditScreen({ navigation, route }) {
           price,
           quantity,
           image,
+          imageAsset,
         },
-        token,
       );
       showAlert({
         title: "Produto atualizado",
@@ -108,6 +111,8 @@ export default function ProductEditScreen({ navigation, route }) {
         message: error.message,
         type: "danger",
       });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -140,7 +145,11 @@ export default function ProductEditScreen({ navigation, route }) {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      keyboardShouldPersistTaps="handled"
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <ScreenHeader title="Editar produto" onBack={() => navigation.goBack()} />
 
       <AppInput
@@ -171,32 +180,38 @@ export default function ProductEditScreen({ navigation, route }) {
 
       <QuantityInput onChangeText={setQuantity} value={quantity} />
 
-      <AppInput
-        autoCapitalize="none"
-        icon="image"
-        keyboardType="url"
-        label="Imagem"
-        onChangeText={setImage}
-        placeholder="https://exemplo.com/produto.jpg"
-        value={image}
+      <ProductImagePicker
+        disabled={submitting}
+        imageAsset={imageAsset}
+        imageUrl={image}
+        onRemoveImage={() => {
+          setImage("");
+          setImageAsset(null);
+        }}
+        onSelectImage={setImageAsset}
+        productName={name}
       />
 
       <AppButton
+        disabled={submitting}
         icon="check-circle"
         onPress={handleSubmit}
         style={styles.submitButton}
-        title="Atualizar produto"
+        title={submitting ? "Salvando..." : "Atualizar produto"}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#f5f1ea",
+  },
+  content: {
     padding: 18,
     paddingTop: 58,
-    backgroundColor: "#f5f1ea",
+    paddingBottom: 32,
   },
   submitButton: {
     marginTop: 8,

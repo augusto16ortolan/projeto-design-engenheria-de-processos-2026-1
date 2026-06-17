@@ -9,19 +9,15 @@ function mapOrder(order) {
   };
 }
 
-export async function getOrders(token) {
-  const response = await api.get("/orders", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getOrders() {
+  const response = await api.get("/orders");
 
   const orders = response.data.map((order) => mapOrder(order));
 
   return orders;
 }
 
-export async function createOrder(user, cartItems, token) {
+export async function createOrder(user, cartItems) {
   if (!user) {
     throw new Error("Usuário não autenticado.");
   }
@@ -33,10 +29,7 @@ export async function createOrder(user, cartItems, token) {
   const orderItems = [];
 
   for (const cartItem of cartItems) {
-    const product = await productService.getProductById(
-      cartItem.product.id,
-      token,
-    );
+    const product = await productService.getProductById(cartItem.product.id);
 
     if (!product) {
       throw new Error(`Produto ${cartItem.product.name} não encontrado.`);
@@ -58,11 +51,7 @@ export async function createOrder(user, cartItems, token) {
     items: orderItems,
   };
 
-  const response = await api.post("/orders", order, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.post("/orders", order);
 
   console.log(response.data);
 

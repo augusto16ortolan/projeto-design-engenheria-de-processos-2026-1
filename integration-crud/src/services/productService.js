@@ -1,4 +1,5 @@
 import api from "./api";
+import { uploadProductImage } from "./cloudinaryService";
 
 function parseCurrency(value) {
   if (typeof value === "number") {
@@ -29,68 +30,56 @@ export function mapProduct(product) {
   };
 }
 
-export async function getProducts(token) {
-  const response = await api.get("/products", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getProducts() {
+  const response = await api.get("/products");
 
   return response.data;
 }
 
-export async function getProductById(id, token) {
-  const response = await api.get(`/products/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getProductById(id) {
+  const response = await api.get(`/products/${id}`);
 
   return mapProduct(response.data);
 }
 
-export async function createProduct({ productData, token }) {
+export async function createProduct({ productData }) {
+  const image = productData.imageAsset
+    ? await uploadProductImage(productData.imageAsset)
+    : productData.image || "";
+
   const product = {
     name: productData.name,
     description: productData.description,
     price: parseCurrency(productData.price),
     quantity: Number(productData.quantity),
-    image: productData.image,
+    image,
   };
 
-  const response = await api.post("/products", product, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.post("/products", product);
 
   return mapProduct(response.data);
 }
 
-export async function updateProduct(id, productData, token) {
+export async function updateProduct(id, productData) {
+  const image = productData.imageAsset
+    ? await uploadProductImage(productData.imageAsset)
+    : productData.image || "";
+
   const product = {
     name: productData.name,
     description: productData.description,
     price: parseCurrency(productData.price),
     quantity: Number(productData.quantity),
-    image: productData.image,
+    image,
   };
 
-  const response = await api.put(`/products/${id}`, product, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await api.put(`/products/${id}`, product);
 
   return mapProduct(response.data);
 }
 
-export async function deleteProduct(id, token) {
-  await api.delete(`/products/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function deleteProduct(id) {
+  await api.delete(`/products/${id}`);
 
   return true;
 }
